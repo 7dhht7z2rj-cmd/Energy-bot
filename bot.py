@@ -6,10 +6,7 @@ from bs4 import BeautifulSoup
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 
-# Отримуємо токен зі змінних середовища Render
 API_TOKEN = os.getenv('BOT_TOKEN')
-
-# URL сторінки для моніторингу
 TARGET_URL = "https://energy-ua.info/grafik/%D0%9F%D0%BE%D0%BB%D1%82%D0%B0%D0%B2%D0%B0/%D0%B1%D1%83%D0%BB%D1%8C%D0%B2.+%D0%91.%D0%A5%D0%BC%D0%B5%D0%BB%D1%8C%D0%BD%D0%B8%D1%86%D1%8C%D0%BA%D0%BE%D0%B3%D0%BE/9%D0%B0"
 
 logging.basicConfig(level=logging.INFO)
@@ -19,11 +16,15 @@ dp = Dispatcher()
 
 def parse_schedule() -> str:
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "uk-UA,uk;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Referer": "https://energy-ua.info/"
     }
     
     try:
-        response = requests.get(TARGET_URL, headers=headers, timeout=10)
+        session = requests.Session()
+        response = session.get(TARGET_URL, headers=headers, timeout=15)
         response.raise_for_status()
         
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -50,15 +51,13 @@ def parse_schedule() -> str:
                     break
 
         if schedule_lines:
-            result_text = f"<b>{queue_text}</b>\n\n" + "\n".join(schedule_lines)
+            return f"<b>{queue_text}</b>\n\n" + "\n".join(schedule_lines)
         else:
-            result_text = f"<b>{queue_text}</b>\n\nНе вдалося розпізнати конкретні блоки графіку. Перевірте інформацію на сайті напряму."
-
-        return result_text
+            return f"<b>{queue_text}</b>\n\nНе вдалося розпізнати конкретні блоки графіку. Перевірте інформацію на сайті напряму."
 
     except Exception as e:
         logging.error(f"Помилка при парсингу: {e}")
-        return "❌ Помилка при отриманні даних із сайту. Спробуйте пізніше."
+        return "❌ Помилка при отриманні даних із сайту. Можливо, сайт тимчасово блокує запити."
 
 @dp.message(Command("start"))
 async def send_welcome(message: types.Message):
