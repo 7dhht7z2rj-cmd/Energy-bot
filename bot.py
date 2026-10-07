@@ -1,12 +1,13 @@
 import os
 import logging
 import asyncio
-import cloudscraper
+import requests
 from bs4 import BeautifulSoup
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 
 API_TOKEN = os.getenv('BOT_TOKEN')
+SCRAPER_KEY = "06b94f30c7ecba9f0159609edfff8305"
 TARGET_URL = "https://energy-ua.info/grafik/%D0%9F%D0%BE%D0%BB%D1%82%D0%B0%D0%B2%D0%B0/%D0%B1%D1%83%D0%BB%D1%8C%D0%B2.+%D0%91.%D0%A5%D0%BC%D0%B5%D0%BB%D1%8C%D0%BD%D0%B8%D1%86%D1%8C%D0%BA%D0%BE%D0%B3%D0%BE/9%D0%B0"
 
 logging.basicConfig(level=logging.INFO)
@@ -15,17 +16,10 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
 def parse_schedule() -> str:
+    api_url = f"http://api.scraperapi.com?api_key={SCRAPER_KEY}&url={TARGET_URL}"
+    
     try:
-        # Создаем скрейпер, который умеет проходить защиту Cloudflare
-        scraper = cloudscraper.create_scraper(
-            browser={
-                'browser': 'chrome',
-                'platform': 'windows',
-                'desktop': True
-            }
-        )
-        
-        response = scraper.get(TARGET_URL, timeout=20)
+        response = requests.get(api_url, timeout=30)
         response.raise_for_status()
         
         soup = BeautifulSoup(response.text, 'html.parser')
